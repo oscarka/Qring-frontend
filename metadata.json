@@ -1,0 +1,5 @@
+{
+  "name": "Qring Health Dashboard",
+  "description": "A sophisticated health monitoring dashboard for Qring smart ring data, featuring real-time visualization of heart rate, HRV, stress, blood oxygen, and activity with advanced analytics and glassmorphism design.",
+  "requestFramePermissions": []
+}
