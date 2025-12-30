@@ -291,7 +291,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* 第二排：四个小指标展示（包含运动环） */}
-          <div className="flex-[2] min-h-0 max-h-[350px] grid grid-cols-4 gap-3">
+          <div className="flex-[2] min-h-0 max-h-[350px] grid grid-cols-4 gap-3 mb-4">
             <div className="h-full max-h-[350px]">
               <HRVChart data={hrvData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('hrv')} />
             </div>
@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* 底部状态条 */}
-          <div className="h-10 shrink-0 mt-3 glass-card rounded-xl flex items-center justify-between px-6 border-white/10 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+          <div className="h-10 shrink-0 glass-card rounded-xl flex items-center justify-between px-6 border-white/10 text-[9px] font-black text-slate-500 uppercase tracking-widest">
             <div className="flex items-center space-x-12">
                <span className="flex items-center space-x-2 text-slate-400">
                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
