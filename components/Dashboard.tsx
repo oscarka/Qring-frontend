@@ -279,9 +279,9 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* 主看板区域 */}
-        <div className="col-span-10 flex flex-col min-h-0 space-y-3">
+        <div className="col-span-10 flex flex-col min-h-0">
           {/* 第一排：心率趋势 + 睡眠详情 */}
-          <div className="flex-[3] min-h-0 grid grid-cols-10 gap-3">
+          <div className="flex-[3] min-h-0 grid grid-cols-10 gap-3 mb-3">
             <div className="col-span-6 h-full min-h-[400px]">
               <HeartRateChart data={heartRateData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('hr')} />
             </div>
