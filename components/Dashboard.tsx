@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* 底部状态条 */}
-          <div className="h-10 shrink-0 mt-6 glass-card rounded-xl flex items-center justify-between px-6 border-white/10 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+          <div className="h-10 shrink-0 mt-3 glass-card rounded-xl flex items-center justify-between px-6 border-white/10 text-[9px] font-black text-slate-500 uppercase tracking-widest">
             <div className="flex items-center space-x-12">
                <span className="flex items-center space-x-2 text-slate-400">
                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
