@@ -132,7 +132,7 @@ const HeartRateChart: React.FC<HeartRateChartProps> = ({ data, isLoading, timeRa
         { key: 'value', label: '心率 (BPM)', format: (v) => v ? `${v} BPM` : '--' }
       ]}
     >
-      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+      <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <AreaChart data={processedData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
           <defs>
             <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">

@@ -281,8 +281,8 @@ const Dashboard: React.FC = () => {
         {/* 主看板区域 */}
         <div className="col-span-10 flex flex-col min-h-0 space-y-3">
           {/* 第一排：心率趋势 + 睡眠详情 */}
-          <div className="flex-[3] min-h-0 grid grid-cols-10 gap-3">
-            <div className="col-span-6 h-full min-h-[400px]">
+          <div className="h-[400px] shrink-0 grid grid-cols-10 gap-3">
+            <div className="col-span-6 h-full">
               <HeartRateChart data={heartRateData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('hr')} />
             </div>
             <div className="col-span-4 h-full">
@@ -291,7 +291,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* 第二排：四个小指标展示（包含运动环） */}
-          <div className="flex-[2] min-h-0 grid grid-cols-4 gap-3">
+          <div className="h-[280px] shrink-0 grid grid-cols-4 gap-3">
             <HRVChart data={hrvData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('hrv')} />
             <StressChart data={stressData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('stress')} />
             <OxygenChart data={bloodOxygenData} isLoading={isLoading} timeRange={timeRange} onExpand={() => setExpandedChart('oxygen')} />
