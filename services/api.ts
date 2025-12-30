@@ -31,12 +31,40 @@ export const healthApi = {
   getHeartRate: async (hours: number = 168) => {
     if (USE_MOCK) return wrapResponse(mock.mockHeartRate(hours));
     try { 
-      const response = await api.get(`/heartrate`, { params: { hours, include_zero: "true" } });
-      console.log('✅ 心率数据获取成功:', response.data?.data?.length || 0, '条');
+      console.log('📡 [前端API] 开始请求心率数据, hours:', hours);
+      const url = `${API_BASE}/heartrate`;
+      const params = { hours, include_zero: "true" };
+      console.log('📡 [前端API] 请求URL:', url, '参数:', params);
+      
+      const response = await api.get(`/heartrate`, { params });
+      
+      console.log('✅ [前端API] 心率数据获取成功');
+      console.log('   - 响应状态:', response.status);
+      console.log('   - 数据条数:', response.data?.data?.length || 0);
+      console.log('   - 有效数据(bpm>0):', response.data?.valid_count || 0);
+      console.log('   - 响应时间戳:', response.data?.timestamp || 'N/A');
+      
+      if (response.data?.data && response.data.data.length > 0) {
+        console.log('   - 第一条数据:', response.data.data[0]);
+        console.log('   - 最后一条数据:', response.data.data[response.data.data.length - 1]);
+        const sample = response.data.data.slice(0, 3);
+        console.log('   - 数据示例（前3条）:', sample);
+        
+        // 统计数据
+        const zeroCount = response.data.data.filter((d: any) => d.bpm === 0).length;
+        const nonZeroCount = response.data.data.filter((d: any) => d.bpm > 0).length;
+        console.log('   - 数据统计: 非0值=' + nonZeroCount + '条, 0值=' + zeroCount + '条');
+      } else {
+        console.warn('   ⚠️ [前端API] 响应数据为空！');
+      }
+      
       return response;
     }
     catch (error: any) { 
-      console.error('❌ 心率数据获取失败:', error.message, 'URL:', `${API_BASE}/heartrate`);
+      console.error('❌ [前端API] 心率数据获取失败');
+      console.error('   - 错误信息:', error.message);
+      console.error('   - 请求URL:', `${API_BASE}/heartrate`);
+      console.error('   - 错误详情:', error.response?.data || error);
       return wrapResponse([]);
     }
   },

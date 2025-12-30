@@ -35,6 +35,7 @@ const Dashboard: React.FC = () => {
     const days = timeRange;
     console.log('📊 开始获取数据, timeRange:', timeRange, 'hours:', hours, 'days:', days);
     try {
+      console.log('📊 [Dashboard] 开始并行获取所有数据...');
       const [hr, hrv, st, bo, stts, usr, tgt, act, slp] = await Promise.all([
         healthApi.getHeartRate(hours),
         healthApi.getHRV(hours),
@@ -47,7 +48,7 @@ const Dashboard: React.FC = () => {
         healthApi.getSleep(days)
       ]);
 
-      console.log('📊 数据获取完成:');
+      console.log('📊 [Dashboard] 数据获取完成:');
       console.log('  - 心率:', hr.data?.data?.length || 0, '条');
       console.log('  - HRV:', hrv.data?.data?.length || 0, '条');
       console.log('  - 压力:', st.data?.data?.length || 0, '条');
@@ -55,7 +56,34 @@ const Dashboard: React.FC = () => {
       console.log('  - 活动:', act.data?.data?.length || 0, '条');
       console.log('  - 睡眠:', slp.data?.data?.length || 0, '条');
 
-      setHeartRateData(hr.data?.data || []);
+      // 详细检查心率数据
+      const heartRateDataArray = hr.data?.data || [];
+      console.log('📊 [Dashboard] 心率数据详情:');
+      console.log('  - 数据总数:', heartRateDataArray.length);
+      if (heartRateDataArray.length > 0) {
+        console.log('  - 第一条数据:', heartRateDataArray[0]);
+        console.log('  - 最后一条数据:', heartRateDataArray[heartRateDataArray.length - 1]);
+        console.log('  - 数据示例（前3条）:', heartRateDataArray.slice(0, 3));
+        
+        // 检查数据字段
+        const sample = heartRateDataArray[0];
+        console.log('  - 数据字段检查:', {
+          hasTimestamp: 'timestamp' in sample,
+          hasBpm: 'bpm' in sample,
+          timestampType: typeof sample.timestamp,
+          bpmType: typeof sample.bpm,
+          bpmValue: sample.bpm
+        });
+        
+        // 统计数据
+        const zeroCount = heartRateDataArray.filter((d: any) => d.bpm === 0).length;
+        const nonZeroCount = heartRateDataArray.filter((d: any) => d.bpm > 0).length;
+        console.log('  - 数据统计: 非0值=' + nonZeroCount + '条, 0值=' + zeroCount + '条');
+      } else {
+        console.warn('  ⚠️ [Dashboard] 心率数据为空！');
+      }
+
+      setHeartRateData(heartRateDataArray);
       setHrvData(hrv.data?.data || []);
       setStressData(st.data?.data || []);
       setBloodOxygenData(bo.data?.data || []);
