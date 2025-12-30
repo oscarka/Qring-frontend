@@ -3,6 +3,16 @@ import { TimeRange } from './types';
 
 export const parseISODate = (dateStr: string) => {
   if (!dateStr) return null;
+  
+  // 如果已经是标准的ISO格式（带时区），直接使用
+  if (dateStr.includes('T') && (dateStr.includes('+') || dateStr.includes('Z') || dateStr.includes('-') && dateStr.split('-').length > 3)) {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+  
+  // 处理其他格式
   let formatted = dateStr.replace(' ', 'T');
   if (formatted.split(':').length > 3) {
       const parts = formatted.split(':');
