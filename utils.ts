@@ -51,13 +51,35 @@ export function aggregateData(data: any[], timeField: string, valueField: string
   const nowTime = now.getTime();
   
   // 过滤掉未来时间的数据
+  let futureCount = 0;
+  let parseErrorCount = 0;
   const filteredData = data.filter(item => {
-    const date = parseISODate(item[timeField] as string);
-    if (!date) return false;
+    const dateStr = item[timeField] as string;
+    const date = parseISODate(dateStr);
+    if (!date) {
+      parseErrorCount++;
+      if (parseErrorCount <= 3) {
+        console.warn(`⚠️ [aggregateData] 无法解析时间: ${dateStr}, timeField: ${timeField}`);
+      }
+      return false;
+    }
     const itemTime = date.getTime();
-    return itemTime <= nowTime; // 只保留当前时间之前的数据
+    if (itemTime > nowTime) {
+      futureCount++;
+      if (futureCount <= 3) {
+        console.log(`⏰ [aggregateData] 跳过未来时间数据: ${dateStr}, 解析后: ${date.toISOString()}, 距离现在: ${Math.round((itemTime - nowTime) / 1000 / 60)} 分钟`);
+      }
+      return false;
+    }
+    return true; // 只保留当前时间之前的数据
   });
   
+  if (parseErrorCount > 0) {
+    console.warn(`⚠️ [aggregateData] 时间解析失败: ${parseErrorCount} 条`);
+  }
+  if (futureCount > 0) {
+    console.log(`⏰ [aggregateData] 过滤未来时间数据: ${futureCount} 条`);
+  }
   console.log(`📊 [aggregateData] 过滤未来时间后: ${filteredData.length} 条`);
   
   // 如果是 24 小时且数据量不大，返回精简后的原始数据
