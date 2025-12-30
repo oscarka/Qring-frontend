@@ -42,11 +42,11 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 const OxygenChart: React.FC<OxygenChartProps> = ({ data, isLoading, timeRange, onExpand, isExpanded = false }) => {
-  const processedData = useMemo(() => {
+  const { processedData, yDomain } = useMemo(() => {
     const aggregated = aggregateData(data, 'date', 'soa2', timeRange);
     const withGaps = processGaps(aggregated, 'date', 'soa2', 10800000); // 3h
     
-    return withGaps.map(d => {
+    const mapped = withGaps.map(d => {
       let date = parseISODate(d.date);
       return {
         value: d.soa2,
@@ -61,6 +61,22 @@ const OxygenChart: React.FC<OxygenChartProps> = ({ data, isLoading, timeRange, o
         fullTime: date ? formatFullTime(date) : d.date,
       };
     }).sort((a, b) => a.time - b.time);
+
+    // 动态计算Y轴范围，让数据尽量显示在中间
+    const allVals = mapped.flatMap(d => [d.value, d.dashedValue]).filter(v => v !== null && v !== undefined) as number[];
+    if (allVals.length === 0) {
+      return { processedData: mapped, yDomain: [90, 100] };
+    }
+    const min = Math.min(...allVals);
+    const max = Math.max(...allVals);
+    const range = max - min;
+    // 上下各留15%的边距，让数据居中显示
+    const padding = Math.max(range * 0.15, 1); // 至少1的边距
+    // 血氧值范围通常是90-100，确保不超过合理范围
+    return {
+      processedData: mapped,
+      yDomain: [Math.max(85, Math.floor(min - padding)), Math.min(100, Math.ceil(max + padding))]
+    };
   }, [data, timeRange]);
 
   const stats = useMemo(() => {
@@ -106,7 +122,7 @@ const OxygenChart: React.FC<OxygenChartProps> = ({ data, isLoading, timeRange, o
           />
           <YAxis 
             dataKey="value"
-            domain={[90, 100]} 
+            domain={yDomain}
             tick={{ fill: COLORS.textMuted, fontSize: 9, fontWeight: 700 }} 
             axisLine={false}
             tickLine={false}

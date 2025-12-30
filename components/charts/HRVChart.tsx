@@ -42,11 +42,11 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 const HRVChart: React.FC<HRVChartProps> = ({ data, isLoading, timeRange, onExpand, isExpanded = false }) => {
-  const processedData = useMemo(() => {
+  const { processedData, yDomain } = useMemo(() => {
     const aggregated = aggregateData(data, 'date', 'hrv', timeRange);
     const withGaps = processGaps(aggregated, 'date', 'hrv', 10800000);
 
-    return withGaps.map(d => {
+    const mapped = withGaps.map(d => {
       let date = parseISODate(d.date);
       return {
         value: d.hrv,
@@ -61,6 +61,21 @@ const HRVChart: React.FC<HRVChartProps> = ({ data, isLoading, timeRange, onExpan
         fullTime: date ? formatFullTime(date) : d.date,
       };
     }).sort((a, b) => a.time - b.time);
+
+    // 动态计算Y轴范围，让数据尽量显示在中间
+    const allVals = mapped.flatMap(d => [d.value, d.dashedValue]).filter(v => v !== null && v !== undefined) as number[];
+    if (allVals.length === 0) {
+      return { processedData: mapped, yDomain: [0, 100] };
+    }
+    const min = Math.min(...allVals);
+    const max = Math.max(...allVals);
+    const range = max - min;
+    // 上下各留15%的边距，让数据居中显示
+    const padding = Math.max(range * 0.15, range * 0.1);
+    return {
+      processedData: mapped,
+      yDomain: [Math.max(0, Math.floor(min - padding)), Math.ceil(max + padding)]
+    };
   }, [data, timeRange]);
 
   const stats = useMemo(() => {
@@ -106,6 +121,7 @@ const HRVChart: React.FC<HRVChartProps> = ({ data, isLoading, timeRange, onExpan
           />
           <YAxis 
             dataKey="value"
+            domain={yDomain}
             tick={{ fill: COLORS.textMuted, fontSize: 9, fontWeight: 700 }} 
             axisLine={false}
             tickLine={false}
