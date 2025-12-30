@@ -42,9 +42,34 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 const HeartRateChart: React.FC<HeartRateChartProps> = ({ data, isLoading, timeRange, onExpand, isExpanded = false }) => {
+  // 添加详细日志
+  console.log('📊 HeartRateChart 接收数据:', {
+    dataLength: data.length,
+    isLoading,
+    timeRange,
+    firstItem: data[0],
+    lastItem: data[data.length - 1],
+    sampleItems: data.slice(0, 5)
+  });
+
   const { processedData, yDomain } = useMemo(() => {
+    console.log('📊 HeartRateChart 开始处理数据, 原始数据条数:', data.length);
+    if (data.length > 0) {
+      console.log('📊 HeartRateChart 原始数据字段检查:', {
+        hasTimestamp: 'timestamp' in data[0],
+        hasBpm: 'bpm' in data[0],
+        timestampValue: data[0].timestamp,
+        bpmValue: data[0].bpm,
+        bpmType: typeof data[0].bpm
+      });
+    }
     const aggregated = aggregateData(data, 'timestamp', 'bpm', timeRange);
+    console.log('📊 HeartRateChart 聚合后数据条数:', aggregated.length);
+    if (aggregated.length > 0) {
+      console.log('📊 HeartRateChart 聚合后数据示例:', aggregated.slice(0, 3));
+    }
     const withGaps = processGaps(aggregated, 'timestamp', 'bpm', 3600000);
+    console.log('📊 HeartRateChart 处理间隙后数据条数:', withGaps.length);
     
     const mapped = withGaps.map(d => {
       const date = parseISODate(d.timestamp);
