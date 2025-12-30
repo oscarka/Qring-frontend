@@ -87,7 +87,7 @@ const HRVChart: React.FC<HRVChartProps> = ({ data, isLoading, timeRange, onExpan
         { key: 'value', label: '数值 (ms)', format: (v) => v ? `${Math.round(v)} ms` : '--' }
       ]}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minHeight={200} maxHeight={250}>
         <AreaChart data={processedData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
           <defs>
             <linearGradient id="hrvGradient" x1="0" y1="0" x2="0" y2="1">

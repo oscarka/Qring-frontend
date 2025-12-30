@@ -88,7 +88,7 @@ const StressChart: React.FC<StressChartProps> = ({ data, isLoading, timeRange, o
         { key: 'value', label: '指数', format: (v) => v ? v : '--' }
       ]}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minHeight={200} maxHeight={250}>
         <AreaChart data={processedData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
           <defs>
             <linearGradient id="colorStress" x1="0" y1="0" x2="0" y2="1">
