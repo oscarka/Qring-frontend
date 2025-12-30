@@ -74,7 +74,7 @@ const BaseChart: React.FC<BaseChartProps> = ({
           </div>
         )}
 
-        <div className="flex-1 min-h-[200px] w-full relative">
+        <div className="flex-1 min-h-[300px] w-full relative" style={{ minHeight: '300px' }}>
           {children}
         </div>
 

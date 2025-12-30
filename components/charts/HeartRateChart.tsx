@@ -68,10 +68,18 @@ const HeartRateChart: React.FC<HeartRateChartProps> = ({ data, isLoading, timeRa
     const min = allVals.length > 0 ? Math.min(...allVals) : 60;
     const max = allVals.length > 0 ? Math.max(...allVals) : 100;
     
-    return { 
+    const result = { 
       processedData: mapped, 
       yDomain: [Math.max(0, Math.floor(min - 10)), Math.ceil(max + 10)] 
     };
+    console.log('📊 HeartRateChart 数据处理完成:', {
+      originalCount: data.length,
+      aggregatedCount: aggregated.length,
+      withGapsCount: withGaps.length,
+      finalCount: mapped.length,
+      yDomain: result.yDomain
+    });
+    return result;
   }, [data, timeRange]);
 
   const stats = useMemo(() => {
@@ -99,7 +107,7 @@ const HeartRateChart: React.FC<HeartRateChartProps> = ({ data, isLoading, timeRa
         { key: 'value', label: '心率 (BPM)', format: (v) => v ? `${v} BPM` : '--' }
       ]}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
         <AreaChart data={processedData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
           <defs>
             <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
