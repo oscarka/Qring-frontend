@@ -83,8 +83,8 @@ const ActivityRingsChart: React.FC<ActivityRingsChartProps> = ({ data, target, i
       ]}
     >
       {rings ? (
-        <div className={`h-full flex items-center justify-between ${isExpanded ? 'max-w-4xl mx-auto px-8 py-4' : 'px-1'}`}>
-          <div className={`relative ${isExpanded ? 'w-56 h-56' : 'w-28 h-28'} flex items-center justify-center shrink-0`}>
+        <div className={`h-full flex items-center justify-center ${isExpanded ? 'max-w-4xl mx-auto px-8 py-4' : 'px-1'}`}>
+          <div className={`relative ${isExpanded ? 'w-56 h-56' : 'w-28 h-28'} flex items-center justify-center shrink-0`} style={{ aspectRatio: '1' }}>
              <Ring progress={rings[0].val / (rings[0].target || 1)} color={rings[0].color} radius={ringRadius} stroke={ringStroke} />
              <Ring progress={rings[1].val / (rings[1].target || 1)} color={rings[1].color} radius={ringRadius - ringGap} stroke={ringStroke} />
              <Ring progress={rings[2].val / (rings[2].target || 1)} color={rings[2].color} radius={ringRadius - ringGap * 2} stroke={ringStroke} />
