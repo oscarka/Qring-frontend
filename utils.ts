@@ -29,7 +29,13 @@ export const formatFullTime = (date: Date) => {
  * 数据降采样/聚合工具
  */
 export function aggregateData(data: any[], timeField: string, valueField: string, timeRange: TimeRange) {
-  if (!data || data.length === 0) return [];
+  if (!data || data.length === 0) {
+    console.log('⚠️ [aggregateData] 输入数据为空');
+    return [];
+  }
+  
+  console.log(`📊 [aggregateData] 开始处理, 输入数据: ${data.length} 条, timeField: ${timeField}, valueField: ${valueField}, timeRange: ${timeRange}`);
+  console.log(`📊 [aggregateData] 前3条原始数据:`, data.slice(0, 3));
   
   const now = new Date();
   const nowTime = now.getTime();
@@ -42,12 +48,16 @@ export function aggregateData(data: any[], timeField: string, valueField: string
     return itemTime <= nowTime; // 只保留当前时间之前的数据
   });
   
+  console.log(`📊 [aggregateData] 过滤未来时间后: ${filteredData.length} 条`);
+  
   // 如果是 24 小时且数据量不大，返回精简后的原始数据
   if (timeRange <= 1 && filteredData.length < 500) {
-    return filteredData.map(d => ({
+    const result = filteredData.map(d => ({
       [timeField]: d[timeField],
       [valueField]: Number(d[valueField]) > 0 ? Number(d[valueField]) : null
     }));
+    console.log(`📊 [aggregateData] 直接返回原始数据（24小时模式）: ${result.length} 条`);
+    return result;
   }
 
   // 对于7天和30天视图，使用更小的聚合步长，确保数据点连续
@@ -62,12 +72,15 @@ export function aggregateData(data: any[], timeField: string, valueField: string
   const groups: Record<number, { sum: number, count: number, hasData: boolean }> = {};
   
   // 先处理所有数据
+  let processedCount = 0;
+  let validValueCount = 0;
   filteredData.forEach(item => {
     const date = parseISODate(item[timeField] as string);
     if (!date) return;
     const itemTime = date.getTime();
     if (itemTime < startTime) return; // 超出时间范围的数据
     
+    processedCount++;
     const bucket = Math.floor(itemTime / step) * step;
     
     if (!groups[bucket]) {
@@ -78,16 +91,21 @@ export function aggregateData(data: any[], timeField: string, valueField: string
       groups[bucket].sum += val;
       groups[bucket].count += 1;
       groups[bucket].hasData = true;
+      validValueCount++;
     }
   });
+  
+  console.log(`📊 [aggregateData] 处理统计: 处理了 ${processedCount} 条数据, 有效值(>0): ${validValueCount} 条, 分组数: ${Object.keys(groups).length}`);
 
   // 生成连续的时间序列，确保所有时间段都有数据点
   const result: any[] = [];
+  let validBucketCount = 0;
   for (let t = Math.floor(startTime / step) * step; t <= nowTime; t += step) {
     const bucket = t;
     if (groups[bucket]) {
       const g = groups[bucket];
       const avg = g.count > 0 ? Math.round(g.sum / g.count) : null;
+      if (avg !== null) validBucketCount++;
       result.push({
         [timeField]: new Date(bucket).toISOString(),
         [valueField]: avg,
@@ -103,7 +121,10 @@ export function aggregateData(data: any[], timeField: string, valueField: string
     }
   }
 
-  return result.sort((a, b) => new Date(a[timeField] as string).getTime() - new Date(b[timeField] as string).getTime());
+  const sorted = result.sort((a, b) => new Date(a[timeField] as string).getTime() - new Date(b[timeField] as string).getTime());
+  console.log(`📊 [aggregateData] 聚合完成: 总数据点 ${sorted.length} 个, 有效值数据点 ${validBucketCount} 个`);
+  console.log(`📊 [aggregateData] 前3条聚合结果:`, sorted.slice(0, 3));
+  return sorted;
 }
 
 /**
