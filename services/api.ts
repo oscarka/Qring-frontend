@@ -11,8 +11,40 @@ console.log('🔧 API配置:', {
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000, // 增加到10秒
+  timeout: 30000, // 增加到30秒（适配中国大陆网络环境）
 });
+
+// 添加请求拦截器，记录请求
+api.interceptors.request.use(
+  (config) => {
+    console.log(`📡 [API] 请求: ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  (error) => {
+    console.error('❌ [API] 请求错误:', error);
+    return Promise.reject(error);
+  }
+);
+
+// 添加响应拦截器，处理错误和超时
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error(`⏱️ [API] 请求超时: ${error.config?.url}`);
+      console.error(`   超时时间: ${error.config?.timeout}ms`);
+    } else if (error.response) {
+      console.error(`❌ [API] 服务器错误: ${error.config?.url} - ${error.response.status}`);
+    } else if (error.request) {
+      console.error(`❌ [API] 网络错误: ${error.config?.url} - 无法连接到服务器`);
+    } else {
+      console.error(`❌ [API] 错误: ${error.config?.url} - ${error.message}`);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // 动态切换 Mock 数据的状态
 let USE_MOCK = false;
@@ -137,12 +169,17 @@ export const healthApi = {
   getStats: async () => {
     if (USE_MOCK) return wrapResponse(mock.mockStats);
     try { 
-      const response = await api.get(`/stats`);
+      const response = await api.get(`/stats`, { timeout: 30000 }); // 单独设置30秒超时
       console.log('✅ 统计数据获取成功');
       return response;
     }
     catch (error: any) { 
-      console.error('❌ 统计数据获取失败:', error.message, 'URL:', `${API_BASE}/stats`);
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.error('⏱️ 统计数据获取超时，可能是网络问题或服务器响应慢');
+        console.error('   建议：检查网络连接，或稍后重试');
+      } else {
+        console.error('❌ 统计数据获取失败:', error.message, 'URL:', `${API_BASE}/stats`);
+      }
       return wrapResponse(null);
     }
   },
