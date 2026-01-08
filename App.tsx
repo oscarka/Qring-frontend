@@ -1,9 +1,72 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ICONS } from './constants';
 import Dashboard from './components/Dashboard';
+import { healthApi } from './services/api';
+
+interface User {
+  user_id: string;
+  display_name?: string;
+  device_name?: string;
+  created_at?: string;
+  last_update?: string;
+}
 
 const App: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // 加载用户列表
+  const loadUsers = useCallback(async () => {
+    try {
+      const response = await healthApi.getUsers();
+      const userList = response.data?.data || [];
+      setUsers(userList);
+      
+      // 如果没有选中的用户，选择第一个或从localStorage恢复
+      if (!selectedUserId) {
+        const savedUserId = localStorage.getItem('qring_selected_user_id');
+        if (savedUserId && userList.find((u: User) => u.user_id === savedUserId)) {
+          setSelectedUserId(savedUserId);
+        } else if (userList.length > 0) {
+          setSelectedUserId(userList[0].user_id);
+          localStorage.setItem('qring_selected_user_id', userList[0].user_id);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 加载用户列表失败:', error);
+    }
+  }, [selectedUserId]);
+
+  // 切换用户
+  const handleUserChange = (userId: string) => {
+    setSelectedUserId(userId);
+    localStorage.setItem('qring_selected_user_id', userId);
+    setShowUserMenu(false);
+    // Dashboard 会通过 useEffect 监听 selectedUserId 变化并重新加载数据
+  };
+
+  // 初始化：加载用户列表
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showUserMenu && !target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
+
+  const currentUser = users.find(u => u.user_id === selectedUserId);
+  const displayName = currentUser?.display_name || currentUser?.device_name || currentUser?.user_id?.substring(0, 8) || '选择用户';
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-950 text-white flex flex-col selection:bg-indigo-500/30">
       {/* 环境光效优化 */}
@@ -31,15 +94,53 @@ const App: React.FC = () => {
              <span className="flex items-center space-x-1"><ICONS.Zap className="w-3.5 h-3.5 text-amber-400" /><span>84% 电量</span></span>
              <span className="flex items-center space-x-1"><ICONS.RefreshCw className="w-3.5 h-3.5 text-emerald-400" /><span>设备已连接</span></span>
           </div>
-          <div className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full cursor-pointer transition-all border border-white/10 hover:border-indigo-500/50">
-            <ICONS.User className="w-4 h-4 text-slate-300" />
+          {/* 用户菜单 */}
+          <div className="relative user-menu-container">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full cursor-pointer transition-all border border-white/10 hover:border-indigo-500/50"
+              title={displayName}
+            >
+              <ICONS.User className="w-4 h-4 text-slate-300" />
+            </button>
+            {/* 用户下拉菜单 */}
+            {showUserMenu && users.length > 0 && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden z-50">
+                <div className="px-3 py-2 border-b border-white/10">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">切换用户</div>
+                  <div className="text-xs text-slate-400 truncate">{displayName}</div>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {users.map((user) => (
+                    <button
+                      key={user.user_id}
+                      onClick={() => handleUserChange(user.user_id)}
+                      className={`w-full px-3 py-2.5 text-left text-xs transition-all ${
+                        selectedUserId === user.user_id
+                          ? 'bg-indigo-500/20 text-indigo-400 border-l-2 border-indigo-500'
+                          : 'text-slate-300 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="font-semibold truncate">
+                        {user.display_name || user.device_name || user.user_id.substring(0, 8)}
+                      </div>
+                      {user.last_update && (
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          {new Date(user.last_update).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       {/* 内容区 */}
       <main className="flex-1 min-h-0 overflow-hidden px-4 py-4">
-        <Dashboard />
+        <Dashboard selectedUserId={selectedUserId} />
       </main>
 
       {/* 页脚 */}
