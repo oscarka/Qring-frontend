@@ -12,11 +12,23 @@ import ActivityRingsChart from './charts/ActivityRingsChart';
 import Sidebar from './Sidebar';
 import Modal from './common/Modal';
 
+interface User {
+  user_id: string;
+  display_name?: string;
+  device_name?: string;
+  created_at?: string;
+  last_update?: string;
+}
+
 const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>(TimeRange.Days7);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   const [useMock, setUseMockState] = useState(false); // Mock数据开关状态
+
+  // 用户相关状态
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const [heartRateData, setHeartRateData] = useState([]);
   const [hrvData, setHrvData] = useState([]);
@@ -29,23 +41,54 @@ const Dashboard: React.FC = () => {
   const [targetInfo, setTargetInfo] = useState<TargetInfo | null>(null);
   const [realtimeHeartRate, setRealtimeHeartRate] = useState<number | null>(null); // 实时心率值
 
+  // 加载用户列表
+  const loadUsers = useCallback(async () => {
+    try {
+      const response = await healthApi.getUsers();
+      const userList = response.data?.data || [];
+      setUsers(userList);
+      
+      // 如果没有选中的用户，选择第一个或从localStorage恢复
+      if (!selectedUserId) {
+        const savedUserId = localStorage.getItem('qring_selected_user_id');
+        if (savedUserId && userList.find((u: User) => u.user_id === savedUserId)) {
+          setSelectedUserId(savedUserId);
+        } else if (userList.length > 0) {
+          setSelectedUserId(userList[0].user_id);
+          localStorage.setItem('qring_selected_user_id', userList[0].user_id);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 加载用户列表失败:', error);
+    }
+  }, [selectedUserId]);
+
+  // 切换用户
+  const handleUserChange = (userId: string) => {
+    setSelectedUserId(userId);
+    localStorage.setItem('qring_selected_user_id', userId);
+    // 重新加载数据
+    fetchData();
+  };
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     const hours = timeRange * 24;
     const days = timeRange;
-    console.log('📊 开始获取数据, timeRange:', timeRange, 'hours:', hours, 'days:', days);
+    const currentUserId = selectedUserId;
+    console.log('📊 开始获取数据, timeRange:', timeRange, 'hours:', hours, 'days:', days, 'user_id:', currentUserId);
     try {
       console.log('📊 [Dashboard] 开始并行获取所有数据...');
       const [hr, hrv, st, bo, stts, usr, tgt, act, slp] = await Promise.all([
-        healthApi.getHeartRate(hours),
-        healthApi.getHRV(hours),
-        healthApi.getStress(hours),
-        healthApi.getBloodOxygen(hours),
-        healthApi.getStats(),
-        healthApi.getUserInfo(),
-        healthApi.getTargetInfo(),
-        healthApi.getActivity(days),
-        healthApi.getSleep(days)
+        healthApi.getHeartRate(hours, currentUserId),
+        healthApi.getHRV(hours, currentUserId),
+        healthApi.getStress(hours, currentUserId),
+        healthApi.getBloodOxygen(hours, currentUserId),
+        healthApi.getStats(currentUserId),
+        healthApi.getUserInfo(currentUserId),
+        healthApi.getTargetInfo(currentUserId),
+        healthApi.getActivity(days, currentUserId),
+        healthApi.getSleep(days, currentUserId)
       ]);
 
       console.log('📊 [Dashboard] 数据获取完成:');
@@ -97,7 +140,12 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, selectedUserId]);
+
+  // 初始化：加载用户列表
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   // 当 useMock 改变时，同步到 API 服务并重新获取数据
   useEffect(() => {
@@ -218,6 +266,33 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col space-y-3">
+      {/* 用户选择器 */}
+      {users.length > 0 && (
+        <div className="shrink-0 flex items-center justify-between glass-card px-4 py-2 rounded-xl border-white/10 bg-slate-800/40">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-semibold text-slate-400">用户:</span>
+            <select
+              value={selectedUserId || ''}
+              onChange={(e) => handleUserChange(e.target.value)}
+              className="bg-slate-700/50 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {users.map((user) => (
+                <option key={user.user_id} value={user.user_id}>
+                  {user.display_name || user.device_name || user.user_id.substring(0, 8)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {selectedUserId && (
+            <div className="text-xs text-slate-500">
+              {users.find(u => u.user_id === selectedUserId)?.last_update 
+                ? `最后更新: ${new Date(users.find(u => u.user_id === selectedUserId)!.last_update!).toLocaleString()}`
+                : ''}
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* 顶部指标总结 */}
       <div className="shrink-0 flex items-center space-x-3 overflow-x-auto no-scrollbar pb-1">
         {summaryMetrics.map((m, i) => (

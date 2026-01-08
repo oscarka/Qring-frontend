@@ -59,13 +59,38 @@ const wrapResponse = (data: any) => ({
   data: { success: true, data: data }
 });
 
+// 获取当前选择的用户ID（从localStorage）
+const getCurrentUserId = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('qring_selected_user_id');
+  }
+  return null;
+};
+
 export const healthApi = {
-  getHeartRate: async (hours: number = 168) => {
+  // 获取用户列表
+  getUsers: async () => {
+    try {
+      const response = await api.get(`/users`);
+      console.log('✅ 用户列表获取成功:', response.data?.data?.length || 0, '个用户');
+      return response;
+    } catch (error: any) {
+      console.error('❌ 用户列表获取失败:', error.message);
+      return wrapResponse([]);
+    }
+  },
+
+  getHeartRate: async (hours: number = 168, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockHeartRate(hours));
     try { 
       console.log('📡 [前端API] 开始请求心率数据, hours:', hours);
       const url = `${API_BASE}/heartrate`;
-      const params = { hours, include_zero: "true" };
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { hours, include_zero: "true" };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      console.log('📡 [前端API] 开始请求心率数据, hours:', hours, 'user_id:', currentUserId);
       console.log('📡 [前端API] 请求URL:', url, '参数:', params);
       
       const response = await api.get(`/heartrate`, { params });
@@ -101,10 +126,15 @@ export const healthApi = {
     }
   },
   
-  getHRV: async (hours: number = 168) => {
+  getHRV: async (hours: number = 168, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockHRV(hours));
-    try { 
-      const response = await api.get(`/hrv`, { params: { hours } });
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { hours };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/hrv`, { params });
       console.log('✅ HRV数据获取成功:', response.data?.data?.length || 0, '条');
       return response;
     }
@@ -114,10 +144,15 @@ export const healthApi = {
     }
   },
   
-  getStress: async (hours: number = 168) => {
+  getStress: async (hours: number = 168, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockStress(hours));
-    try { 
-      const response = await api.get(`/stress`, { params: { hours } });
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { hours };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/stress`, { params });
       console.log('✅ 压力数据获取成功:', response.data?.data?.length || 0, '条');
       return response;
     }
@@ -127,10 +162,15 @@ export const healthApi = {
     }
   },
   
-  getBloodOxygen: async (hours: number = 168) => {
+  getBloodOxygen: async (hours: number = 168, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockBloodOxygen(hours));
-    try { 
-      const response = await api.get(`/blood-oxygen`, { params: { hours } });
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { hours };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/blood-oxygen`, { params });
       console.log('✅ 血氧数据获取成功:', response.data?.data?.length || 0, '条');
       return response;
     }
@@ -140,10 +180,15 @@ export const healthApi = {
     }
   },
   
-  getActivity: async (days: number = 30) => {
+  getActivity: async (days: number = 30, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockActivity(days));
-    try { 
-      const response = await api.get(`/daily-activity`, { params: { days } });
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { days };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/daily-activity`, { params });
       console.log('✅ 活动数据获取成功:', response.data?.data?.length || 0, '条');
       return response;
     }
@@ -153,10 +198,15 @@ export const healthApi = {
     }
   },
 
-  getSleep: async (days: number = 30) => {
+  getSleep: async (days: number = 30, userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockSleep(days));
-    try { 
-      const response = await api.get(`/sleep`, { params: { days } });
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = { days };
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/sleep`, { params });
       console.log('✅ 睡眠数据获取成功:', response.data?.data?.length || 0, '条');
       return response;
     }
@@ -166,10 +216,15 @@ export const healthApi = {
     }
   },
   
-  getStats: async () => {
+  getStats: async (userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockStats);
-    try { 
-      const response = await api.get(`/stats`, { timeout: 30000 }); // 单独设置30秒超时
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = {};
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/stats`, { params, timeout: 30000 }); // 单独设置30秒超时
       console.log('✅ 统计数据获取成功');
       return response;
     }
@@ -184,10 +239,15 @@ export const healthApi = {
     }
   },
   
-  getUserInfo: async () => {
+  getUserInfo: async (userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockUserInfo);
-    try { 
-      const response = await api.get(`/user-info`);
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = {};
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/user-info`, { params });
       console.log('✅ 用户信息获取成功');
       return response;
     }
@@ -197,10 +257,15 @@ export const healthApi = {
     }
   },
   
-  getTargetInfo: async () => {
+  getTargetInfo: async (userId?: string | null) => {
     if (USE_MOCK) return wrapResponse(mock.mockTargetInfo);
-    try { 
-      const response = await api.get(`/target-info`);
+    try {
+      const currentUserId = userId !== undefined ? userId : getCurrentUserId();
+      const params: any = {};
+      if (currentUserId) {
+        params.user_id = currentUserId;
+      }
+      const response = await api.get(`/target-info`, { params });
       console.log('✅ 目标设置获取成功');
       return response;
     }
